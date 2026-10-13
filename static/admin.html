@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kuwentuhan — Taglish Tutor Admin</title>
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<div class="container" aria-hidden="true"></div>
+<div class="page-loader" id="page-loader" aria-label="Loading">
+  <div class="loader-content">
+    <div class="loader-orb-wrap">
+      <div class="loader-ring loader-ring-outer"></div>
+      <div class="loader-ring loader-ring-inner"></div>
+      <div class="loader-core">
+        <svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3l1.9 5.8a2 2 0 0 0 1.3 1.3L21 12l-5.8 1.9a2 2 0 0 0-1.3 1.3L12 21l-1.9-5.8a2 2 0 0 0-1.3-1.3L3 12l5.8-1.9a2 2 0 0 0 1.3-1.3L12 3z"/>
+        </svg>
+      </div>
+    </div>
+    <div class="loader-brand">
+      <h2 class="loader-title">KUWENTUHAN</h2>
+      <div class="loader-subtitle">Taglish Tutor • Telemetry Console</div>
+    </div>
+    <div class="loader-progress-wrap">
+      <div class="loader-progress-track" aria-hidden="true">
+        <div class="loader-progress-bar" id="load-bar"></div>
+      </div>
+      <div class="loader-progress-info">
+        <span class="loader-status" id="load-status">Connecting to telemetry server...</span>
+        <span class="loader-pct" id="load-pct">0%</span>
+      </div>
+    </div>
+  </div>
+</div>
+<main>
+  <h1>Kuwentuhan Taglish Tutor Telemetry</h1>
+  <p class="sub">Language practice analytics &amp; session dataset export</p>
+  <label for="t">Admin Access Token</label>
+  <input id="t" type="password" placeholder="Enter ADMIN_TOKEN..." autocomplete="off">
+  <button id="go" type="button">Load Metrics</button>
+  <p id="msg"></p>
+  <table id="tbl" hidden></table>
+  <a class="btn" id="csv" href="#" hidden>Export CSV</a>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+$("go").onclick = async () => {
+  const btn = $("go");
+  const token = $("t").value.trim();
+  $("msg").textContent = "";
+  btn.disabled = true;
+  btn.textContent = "Loading...";
+  try {
+    const r = await fetch("/admin/stats", { headers: { "x-admin-token": token } });
+    if (!r.ok) {
+      $("msg").textContent = "Invalid token, or ADMIN_TOKEN isn't set on the server.";
+      $("tbl").hidden = $("csv").hidden = true;
+      return;
+    }
+    const d = await r.json();
+    const rows = [
+      ["Total Messages", d.messages],
+      ["Unique Sessions", d.sessions],
+      ["Helpful (👍)", d.thumbs_up],
+      ["Not Quite (👎)", d.thumbs_down],
+      ...Object.entries(d.by_mode).map(([m, n]) => ["Mode: " + m, n])
+    ];
+    $("tbl").innerHTML = rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
+    $("tbl").hidden = false;
+    $("csv").hidden = false;
+    $("csv").href = "/admin/export.csv?token=" + encodeURIComponent(token);
+  } catch {
+    $("msg").textContent = "Could not reach the server.";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Load Metrics";
+  }
+};
+
+(function initPageLoader() {
+  const loader = $("page-loader");
+  const bar = $("load-bar");
+  const pctEl = $("load-pct");
+  const statusEl = $("load-status");
+  if (!loader) return;
+
+  const DURATION = 2400;
+  const start = performance.now();
+  let serverOk = false, finished = false;
+
+  fetch("/healthz")
+    .then(r => { if (r.ok) serverOk = true; })
+    .catch(() => {});
+
+  function dismiss() {
+    if (finished) return;
+    finished = true;
+    loader.classList.add("hide");
+    setTimeout(() => {
+      loader.remove();
+      $("t")?.focus();
+    }, 750);
+  }
+
+  function tick(now) {
+    if (finished) return;
+    const elapsed = Math.min(now - start, DURATION);
+    const t = elapsed / DURATION;
+    const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    const pct = Math.round(eased * 100);
+
+    if (bar) bar.style.transform = `scaleX(${eased.toFixed(4)})`;
+    if (pctEl) pctEl.textContent = pct + "%";
+    if (statusEl) {
+      if (pct < 35) statusEl.textContent = "Connecting to telemetry database...";
+      else if (pct < 70) statusEl.textContent = serverOk ? "Database online • Preparing console..." : "Preparing telemetry console...";
+      else if (pct < 95) statusEl.textContent = "Verifying security gates...";
+      else statusEl.textContent = "Ready • Entering Admin Console...";
+    }
+
+    if (elapsed < DURATION) {
+      requestAnimationFrame(tick);
+    } else {
+      dismiss();
+    }
+  }
+
+  loader.onclick = dismiss;
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
