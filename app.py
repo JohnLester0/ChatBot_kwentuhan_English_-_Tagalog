@@ -85,7 +85,8 @@ class Rating(BaseModel):
     value: Literal[-1, 1]
 
 app = FastAPI(title="Kuwentuhan Bot")
-app.mount("/static", StaticFiles(directory="static"), name="static")
+if os.path.exists("static"):
+    app.mount("/static", StaticFiles(directory="static"), name="static")
 hits: dict[str, collections.deque] = collections.defaultdict(collections.deque)
 _client = None
 
@@ -1144,26 +1145,26 @@ class EditMessage(BaseModel):
 # ---------- routes ----------
 @app.get("/")
 def home():
-    resp = FileResponse("index.html" if os.path.exists("index.html") else "static/index.html")
+    resp = FileResponse("index.html")
     resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     return resp
 
 @app.get("/admin")
 @app.get("/admin.html")
 def admin_page():
-    resp = FileResponse("admin.html" if os.path.exists("admin.html") else "static/admin.html")
+    resp = FileResponse("admin.html")
     resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     return resp
 
 @app.get("/style.css")
 def style_css():
-    resp = FileResponse("style.css" if os.path.exists("style.css") else "static/style.css", media_type="text/css")
+    resp = FileResponse("style.css", media_type="text/css")
     resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     return resp
 
 @app.get("/admin.css")
 def admin_css():
-    resp = FileResponse("admin.css" if os.path.exists("admin.css") else "static/admin.css", media_type="text/css")
+    resp = FileResponse("admin.css", media_type="text/css")
     resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     return resp
 
