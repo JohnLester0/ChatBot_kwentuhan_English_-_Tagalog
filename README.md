@@ -1,19 +1,67 @@
-# ChatBot_kwentuhan_English_-_Tagalog
+# 🇵🇭 Kuwentuhan Taglish AI Tutor 🇬🇧
 
-# Kuwentuhan Bot
-Filipino / English / Taglish chatbot with jokes and stories. Runs on an LLM API (or local Ollama).
+[![Live Demo](https://img.shields.io/badge/Render-Live%20Demo-46E3B7?style=for-the-badge&logo=render&logoColor=white)](https://chatbot-kwentuhan-english-tagalog.onrender.com)
+[![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 
-## Run
-    pip install -r requirements.txt
-    cp .env.example .env        # fill in values, then load them into your shell
-    uvicorn app:app --reload    # http://127.0.0.1:8000
+An interactive bilingual conversation coach and language tutor specializing in **Tagalog (Filipino)**, **English**, and **everyday Taglish**. Built with FastAPI, streaming Server-Sent Events (SSE), and a minimalist dark charcoal & silver design.
 
-## Pages
-- `/`       chat app (language modes, jokes, stories, thumbs up/down)
-- `/admin`  stats + CSV export (needs ADMIN_TOKEN)
-- `/health` status check
+🌐 **Live Demo:** [https://chatbot-kwentuhan-english-tagalog.onrender.com](https://chatbot-kwentuhan-english-tagalog.onrender.com)
 
-## Notes
-- Chats are saved to SQLite for research when LOG_CHATS=true. The chat page tells users this.
-- Free hosts often wipe disk on restart: export the CSV regularly or attach a persistent disk.
-- Rate limiting is in-memory, so run a single worker.
+---
+
+## ✨ Features
+
+- **Bilingual Learning Modes:**
+  - 🇵🇭 **Filipino (Tagalog):** Practice Tagalog grammar, affixes (*mag-*, *nag-*, *-um-*), and polite particles (*po/opo*).
+  - 🇬🇧 **English:** Polish everyday grammar, pronunciation, and correct common Filipinisms.
+  - 💬 **Taglish:** Master natural Filipino-English code-switching used in daily conversations.
+- **Strict Language Restrictions:** Dedicated solely to English and Tagalog. Foreign language questions are politely redirected.
+- **Interactive Grammar Comparison Cards:** Markdown tables automatically render into boxed cards with distinct columns.
+- **Auto-Resizing Message Box:** Input expands dynamically with multi-line support (`Shift + Enter`).
+- **Interactive Suggestions Carousel:** Horizontal swipeable/scrollable carousel with starter topics.
+- **Admin & Analytics Dashboard (`/admin`):** Conversation logs, ratings, and CSV export.
+
+---
+
+## 🚀 Quick Start (Local Development)
+
+### 1. Clone the repository
+```bash
+git clone https://github.com/JohnLester0/ChatBot_kwentuhan_English_-_Tagalog.git
+cd ChatBot_kwentuhan_English_-_Tagalog
+```
+
+### 2. Install dependencies
+```bash
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+### 3. Configure environment variables
+```bash
+cp env.example .env
+```
+Edit `.env` to configure your LLM provider (`openai` or `anthropic`) and API key.
+
+### 4. Run the application
+```bash
+uvicorn app:app --reload --host 127.0.0.1 --port 8000
+```
+Open your browser at [http://127.0.0.1:8000](http://127.0.0.1:8000).
+
+---
+
+## 🌐 Deployment
+
+This application is deployed on [Render](https://render.com) as a Web Service:
+* **Runtime:** Python 3 (or Docker)
+* **Build Command:** `pip install -r requirements.txt`
+* **Start Command:** `uvicorn app:app --host 0.0.0.0 --port $PORT`
+* **Health Check Endpoint:** `/healthz`
+
+---
+
+## 📄 License
+MIT License
