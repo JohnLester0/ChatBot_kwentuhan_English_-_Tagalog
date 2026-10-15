@@ -1,6 +1,6 @@
 """Kuwentuhan Bot: full system. Chat (streaming), language modes, logging, ratings, admin, rate limit."""
 import os, json, time, csv, io, sqlite3, secrets, collections, asyncio, random
-from typing import Literal
+from typing import Literal, Any, Optional
 import httpx
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, StreamingResponse, PlainTextResponse
@@ -93,17 +93,17 @@ with db() as c:
 
 # ---------- app ----------
 class Msg(BaseModel):
-    role: str = "user"
-    content: str = Field(default="", max_length=10000)
+    role: Optional[str] = "user"
+    content: Optional[str] = ""
 
 class ChatRequest(BaseModel):
-    mode: str = "auto"
-    session: str = Field(default="", max_length=128)
-    messages: list[Msg] = Field(default_factory=list)
+    mode: Optional[str] = "auto"
+    session: Optional[str] = ""
+    messages: list[Any] = Field(default_factory=list)
 
 class Rating(BaseModel):
     id: int
-    value: Literal[-1, 1]
+    value: int = 1
 
 app = FastAPI(title="Kuwentuhan Bot")
 if os.path.exists("static"):
@@ -1538,8 +1538,8 @@ def has_valid_key() -> bool:
     return os.getenv("ANTHROPIC_API_KEY", "") not in placeholders
 
 class EditMessage(BaseModel):
-    role: Literal["user", "assistant"] = "user"
-    content: str = Field(min_length=1, max_length=4000)
+    role: Optional[str] = "user"
+    content: Optional[str] = ""
 
 # ---------- routes ----------
 @app.get("/")
@@ -1580,11 +1580,18 @@ async def chat(req: ChatRequest, request: Request):
     
     clean_msgs = []
     for m in req.messages:
-        text = (m.content or "").strip()
+        if isinstance(m, dict):
+            r = str(m.get("role", "user")).lower()
+            text = str(m.get("content", "")).strip()
+        elif hasattr(m, "content"):
+            r = str(getattr(m, "role", "user")).lower()
+            text = str(getattr(m, "content", "")).strip()
+        else:
+            continue
         if not text:
             continue
-        r = "assistant" if str(m.role).lower() in ("assistant", "bot", "tutor", "model") else "user"
-        clean_msgs.append({"role": r, "content": text})
+        role = "assistant" if r in ("assistant", "bot", "tutor", "model") else "user"
+        clean_msgs.append({"role": role, "content": text})
 
     if not clean_msgs:
         raise HTTPException(400, "No user message.")
@@ -1611,10 +1618,11 @@ async def chat(req: ChatRequest, request: Request):
         resolved_mode = norm_mode
     valid = has_valid_key()
     row_id = None
+    req_session = str(req.session or "")
     if LOG_CHATS:
         with db() as c:
             row_id = c.execute("INSERT INTO chats(ts,session,mode,model,user_text) VALUES(datetime('now'),?,?,?,?)",
-                               (req.session, resolved_mode, MODEL, history[-1]["content"])).lastrowid
+                               (req_session, resolved_mode, MODEL, history[-1]["content"])).lastrowid
     source = (stream_openai if PROVIDER == "openai" else stream_anthropic) if valid else None
 
     async def stream():
@@ -1654,9 +1662,10 @@ async def chat(req: ChatRequest, request: Request):
 
 @app.put("/chat/{chat_id}")
 def edit_chat(chat_id: int, body: EditMessage):
-    col = "user_text" if body.role == "user" else "reply"
+    role = str(body.role or "user").lower()
+    col = "reply" if role in ("assistant", "bot", "tutor", "model") else "user_text"
     with db() as c:
-        c.execute(f"UPDATE chats SET {col}=? WHERE id=?", (body.content, chat_id))
+        c.execute(f"UPDATE chats SET {col}=? WHERE id=?", (body.content or "", chat_id))
     return {"ok": True}
 
 @app.delete("/chat/{chat_id}")
@@ -1694,3 +1703,8 @@ def export(request: Request):
             w.writerow(list(r))
     return PlainTextResponse(buf.getvalue(), media_type="text/csv",
                              headers={"Content-Disposition": "attachment; filename=chats.csv"})
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("app:app", host="0.0.0.0", port=port, reload=False)
