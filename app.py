@@ -93,13 +93,13 @@ with db() as c:
 
 # ---------- app ----------
 class Msg(BaseModel):
-    role: Literal["user", "assistant"]
-    content: str = Field(min_length=1, max_length=4000)
+    role: str = "user"
+    content: str = Field(default="", max_length=10000)
 
 class ChatRequest(BaseModel):
-    mode: Literal["auto", "fil", "en", "both"] = "auto"
-    session: str = Field(default="", max_length=64)
-    messages: list[Msg] = Field(min_length=1, max_length=60)
+    mode: str = "auto"
+    session: str = Field(default="", max_length=128)
+    messages: list[Msg] = Field(default_factory=list)
 
 class Rating(BaseModel):
     id: int
@@ -1577,19 +1577,38 @@ def health():
 async def chat(req: ChatRequest, request: Request):
     if limited(request):
         raise HTTPException(429, "Too many messages. Please wait a minute.")
-    history = [m.model_dump() for m in req.messages][-20:]
+    
+    clean_msgs = []
+    for m in req.messages:
+        text = (m.content or "").strip()
+        if not text:
+            continue
+        r = "assistant" if str(m.role).lower() in ("assistant", "bot", "tutor", "model") else "user"
+        clean_msgs.append({"role": r, "content": text})
+
+    if not clean_msgs:
+        raise HTTPException(400, "No user message.")
+
+    history = clean_msgs[-20:]
     while history and history[0]["role"] != "user":
         history.pop(0)
     if not history:
-        raise HTTPException(400, "No user message.")
+        history = [clean_msgs[-1]]
+
+    req_mode = str(req.mode or "auto").lower().strip()
+    norm_mode = "fil" if req_mode in ("fil", "tagalog", "filipino") else (
+        "en" if req_mode in ("en", "english") else (
+            "both" if req_mode in ("both", "taglish") else "auto"
+        )
+    )
 
     shift = _check_language_shift(history[-1]["content"])
     if shift:
         resolved_mode = shift
-    elif req.mode == "auto":
+    elif norm_mode == "auto":
         resolved_mode = _detect_language(history[-1]["content"], history)
     else:
-        resolved_mode = req.mode
+        resolved_mode = norm_mode
     valid = has_valid_key()
     row_id = None
     if LOG_CHATS:
