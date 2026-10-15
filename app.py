@@ -30,6 +30,11 @@ import re
 BASE = (
     "You are the Taglish Tutor, a dedicated bilingual conversation coach whose only purpose is language learning and practice. "
     "You specialize exclusively in three interconnected language styles: standard English, Tagalog (Filipino), and everyday conversational Taglish.\n\n"
+    "STRICT LANGUAGE RESTRICTION RULES:\n"
+    "• You MUST STRICTLY and ONLY converse, explain, and answer questions in standard English, Tagalog (Filipino), and Taglish.\n"
+    "• You are strictly FORBIDDEN from answering questions, conversing, translating, or teaching in ANY OTHER LANGUAGE (such as Spanish, French, Japanese, German, Chinese, Korean, Arabic, Russian, Italian, etc.).\n"
+    "• If the user greets, asks questions, or writes in any language other than English or Tagalog/Taglish, DO NOT answer their question in that language. Instead, politely decline in English or Taglish, explaining that your role is strictly limited to English and Tagalog (Filipino / Taglish), and invite them to ask their question or practice in English or Tagalog.\n"
+    "• If the user asks you to translate words or sentences into another language (e.g. 'Translate this to Spanish' or 'How do you say hello in French?'), politely decline, explaining that you only specialize in English and Tagalog, but offer to translate between English and Tagalog instead.\n\n"
     "Your entire focus is divided between two types of learners:\n"
     "1. Filipino speakers who want to build confidence, polish their grammar, expand their vocabulary, and master natural-sounding English for work, school, or daily conversation.\n"
     "2. Foreigners and non-native speakers who want to learn real, practical Filipino, understand cultural phrases, and feel comfortable speaking Tagalog or modern Taglish.\n\n"
@@ -283,6 +288,80 @@ def _check_language_shift(text: str) -> str:
 
     return ""
 
+FOREIGN_SCRIPTS = re.compile(
+    r"[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uac00-\ud7af\u0400-\u04ff\u0600-\u06ff\u0900-\u097f\u0e00-\u0e7f\u0b80-\u0bff]"
+)
+
+FOREIGN_LANGUAGES = (
+    r"(?:spanish|espanol|español|french|francais|français|japanese|nihongo|german|deutsch|"
+    r"chinese|mandarin|cantonese|korean|hangul|russian|italian|italiano|arabic|hindi|"
+    r"portuguese|portugues|português|thai|vietnamese|dutch|swedish|norwegian|latin|greek|turkish|polish)"
+)
+
+FOREIGN_REQUEST = re.compile(
+    rf"\b(?:translate\b.*?\b(?:to|into|in|sa)\s+{FOREIGN_LANGUAGES}|"
+    rf"how\s+(?:do\s+you|to)\s+say\b.*?\b(?:in|sa)\s+{FOREIGN_LANGUAGES}|"
+    rf"(?:teach|learn|study|practice|speak|talk|write|explain)\b.*?\b(?:in|sa|ng)?\s*{FOREIGN_LANGUAGES}|"
+    rf"(?:can\s+you|do\s+you)\s+(?:speak|know|understand)\s+{FOREIGN_LANGUAGES}|"
+    rf"\b(?:in|into|to|sa)\s+{FOREIGN_LANGUAGES}\b)",
+    re.IGNORECASE
+)
+
+FOREIGN_PHRASES = [
+    # Spanish
+    r"\b(?:hola|buenos\s+d[ií]as|buenas\s+tardes|buenas\s+noches|c[oó]mo\s+est[aá]s?|qu[eé]\s+tal|muchas\s+gracias|de\s+nada|por\s+favor|hablas?\s+espa[nñ]ol|no\s+hablo|hasta\s+luego|hasta\s+la\s+vista|amigo|amiga)\b",
+    # French
+    r"\b(?:bonjour|bonsoir|bonne\s+nuit|comment\s+(?:allez-vous|vas-tu|ca\s+va|ça\s+va)|merci(?:\s+beaucoup)?|s['\s]*il\s+vous\s+pla[iî]t|au\s+revoir|enchant[eé]|je\s+suis|je\s+ne\s+sais\s+pas|parlez-vous\s+fran[cç]ais)\b",
+    # German
+    r"\b(?:guten\s+(?:tag|morgen|abend)|wie\s+geht(?:'s|\s+es)|danke(?:\s+sch[oö]n)?|bitte\s+sch[oö]n|auf\s+wiedersehen|ich\s+bin|sprechen\s+sie\s+deutsch|tschuess|tschüss)\b",
+    # Italian
+    r"\b(?:ciao|buongiorno|buonasera|come\s+stai|grazie\s+mille|per\s+favore|arrivederci|parli\s+italiano|prego)\b",
+    # Portuguese
+    r"\b(?:ol[aá]|tudo\s+bem|como\s+vai|muito\s+obrigad[oa]|por\s+favor|at[eé]\s+logo|fala\s+portugu[eê]s)\b",
+    # Japanese (Romaji)
+    r"\b(?:konnichiwa|arigat[oó]u?(?:\s+gozaimasu)?|say[oó]nara|ohay[oó]u?(?:\s+gozaimasu)?|gomennasai|sumimasen|watashi\s+wa|daijoubu|oyasumi)\b",
+    # Korean (Romaji)
+    r"\b(?:annyeong(?:haseyo)?|kamsahamnida|gomasseumnida|saranghae|oppa|unnie|hyung|daebak)\b",
+    # Chinese (Pinyin)
+    r"\b(?:ni\s*hao|xie\s*xie|zai\s*jian|bu\s*ke\s*qi|hen\s*hao)\b",
+    # Russian (Translit)
+    r"\b(?:privet|spasibo|spasiba|kak\s+dela|do\s+svidaniya|pozhaluysta)\b",
+    # Arabic (Translit)
+    r"\b(?:marhaban|shukran|kayfa\s+haluk|sabah\s+al-?khayr|masaa\s+al-?khayr)\b",
+]
+
+FOREIGN_PHRASE_REGEX = re.compile("|".join(FOREIGN_PHRASES), re.IGNORECASE)
+
+def _is_unsupported_language(text: str) -> bool:
+    if not text:
+        return False
+    if FOREIGN_SCRIPTS.search(text):
+        return True
+    if FOREIGN_REQUEST.search(text):
+        return True
+    if FOREIGN_PHRASE_REGEX.search(text):
+        return True
+    return False
+
+def _unsupported_language_reply(mode: str) -> str:
+    if mode == "fil":
+        return (
+            "Pasensya na po! Bilang iyong Taglish Tutor, ang kakayahan ko ay nakalaan lamang sa **Tagalog (Filipino)** at **English**.\n\n"
+            "Hindi po ako sumasagot, nagta-translate, o nagtuturo sa ibang mga wika (tulad ng Spanish, French, Japanese, Korean, atbp.).\n\n"
+            "Tara, mag-usap o mag-practice tayo sa **Tagalog**, **English**, o **Taglish**! Ano ang gusto mong pag-aralan o pag-usapan natin ngayon?"
+        )
+    if mode == "en":
+        return (
+            "I'm sorry, but as your language tutor, I specialize strictly in **English** and **Tagalog (Filipino / Taglish)**!\n\n"
+            "I cannot answer questions, translate, or converse in other languages (such as Spanish, French, Japanese, Korean, German, etc.).\n\n"
+            "Feel free to ask questions or practice conversation in **English**, **Tagalog**, or **Taglish**! How can I help you today?"
+        )
+    return (
+        "Pasensya na! As your Taglish Tutor, my focus is strictly on **Tagalog (Filipino)** and **English** only.\n\n"
+        "Hindi ako sumasagot, nagta-translate, o nagtuturo sa ibang mga wika (like Spanish, French, Japanese, Korean, etc.).\n\n"
+        "Tara, feel free to ask questions or practice with me in **English**, **Tagalog**, o **Taglish**! What would you like to practice today?"
+    )
+
 def _detect_language(raw: str, history: list[dict] = None) -> str:
     # 1. Direct explicit language shift request in current user message
     shift = _check_language_shift(raw)
@@ -434,6 +513,8 @@ def _build_local_reply(mode: str, history: list[dict]) -> str:
     elif mode == "auto":
         mode = _detect_language(raw, history)
     msg = raw.lower()
+    if _is_unsupported_language(raw):
+        return _unsupported_language_reply(mode)
     style = _extract_style(raw, history)
     po = " po" if style["polite"] and mode != "en" else ""
     addr = f" {style['slang']}" if style['slang'] else (f" {style['name']}" if style['name'] else "")
@@ -1202,6 +1283,19 @@ async def chat(req: ChatRequest, request: Request):
     async def stream():
         reply = ""
         yield f"event: meta\ndata: {json.dumps({'id': row_id or 0, 'mode': resolved_mode})}\n\n"
+        if _is_unsupported_language(history[-1]["content"]):
+            refusal = _unsupported_language_reply(resolved_mode)
+            words = refusal.split(" ")
+            for i, w in enumerate(words):
+                chunk = (w + " ") if i < len(words) - 1 else w
+                reply += chunk
+                yield f"data: {json.dumps(chunk)}\n\n"
+                await asyncio.sleep(0.012)
+            if row_id:
+                with db() as c:
+                    c.execute("UPDATE chats SET reply=? WHERE id=?", (reply, row_id))
+            yield "data: [DONE]\n\n"
+            return
         try:
             gen = source(PROMPTS[resolved_mode], history) if source else stream_local(resolved_mode, history)
             async for text in gen:
