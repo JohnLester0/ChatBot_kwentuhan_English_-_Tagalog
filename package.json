@@ -2,7 +2,7 @@
   "name": "kuwentuhan-bot",
   "private": true,
   "scripts": {
-    "dev": "sh -c 'if [ -f .venv/bin/uvicorn ]; then .venv/bin/uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000} --reload; else uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000}; fi'",
+    "dev": "sh -c 'fuser -k ${PORT:-8000}/tcp >/dev/null 2>&1 || true; if [ -f .venv/bin/uvicorn ]; then .venv/bin/uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000} --reload; else uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000}; fi'",
     "start": "sh -c 'if [ -f .venv/bin/uvicorn ]; then .venv/bin/uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000}; else uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000}; fi'"
   }
 }
