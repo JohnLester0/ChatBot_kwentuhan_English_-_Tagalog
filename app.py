@@ -83,13 +83,19 @@ PROMPTS = {
 }
 
 # ---------- database ----------
+def init_db():
+    with sqlite3.connect(DB_PATH) as c:
+        c.execute("""CREATE TABLE IF NOT EXISTS chats(
+            id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, session TEXT, mode TEXT, model TEXT,
+            user_text TEXT, reply TEXT DEFAULT '', rating INTEGER DEFAULT 0)""")
+
 def db():
+    if not os.path.exists(DB_PATH):
+        init_db()
     c = sqlite3.connect(DB_PATH); c.row_factory = sqlite3.Row; return c
 
-with db() as c:
-    c.execute("""CREATE TABLE IF NOT EXISTS chats(
-        id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT, session TEXT, mode TEXT, model TEXT,
-        user_text TEXT, reply TEXT DEFAULT '', rating INTEGER DEFAULT 0)""")
+if LOG_CHATS:
+    init_db()
 
 # ---------- app ----------
 class Msg(BaseModel):
