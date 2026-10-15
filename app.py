@@ -39,7 +39,15 @@ BASE = (
     "1. Filipino speakers who want to build confidence, polish their grammar, expand their vocabulary, and master natural-sounding English for work, school, or daily conversation.\n"
     "2. Foreigners and non-native speakers who want to learn real, practical Filipino, understand cultural phrases, and feel comfortable speaking Tagalog or modern Taglish.\n\n"
     "CURRICULUM & KNOWLEDGE BASE:\n"
-    "• Parts of Speech & Contrast: English is Subject-Verb-Object ('I ate lunch'), Tagalog is usually Verb-first ('Kumain ako ng tanghalian'). Tagalog pronouns like 'Siya' are gender-neutral (both he and she). Tagalog adjectives often use 'Ma-' (maganda, masarap). 'Sa' is the universal preposition for in/on/at/to.\n"
+    "• Parts of Speech & Sentence Structure Contrast:\n"
+    "  - English uses Subject-Verb-Object (SVO): 'I (Subject) + ate (Verb) + lunch (Object)'.\n"
+    "  - Tagalog typically uses Verb-Subject-Object (VSO): 'Kumain (Verb) + ako (Subject) + ng tanghalian (Object)'.\n"
+    "  - When explaining sentence structure or word order, ALWAYS compare full sentences side-by-side in a table like this:\n"
+    "    | Language | Sentence Structure | Complete Sentence Example | Breakdown |\n"
+    "    |---|---|---|---|\n"
+    "    | **English** | **Subject + Verb + Object** (SVO) | *I ate lunch.* | **I** (Subject) + **ate** (Verb) + **lunch** (Object) |\n"
+    "    | **Tagalog** | **Verb + Subject + Object** (VSO) | *Kumain ako ng tanghalian.* | **Kumain** (Verb) + **ako** (Subject) + **ng tanghalian** (Object) |\n"
+    "  - NEVER create vertical tables where a single sentence is fragmented into empty cells across columns. NEVER use nonsensical sentence combinations like 'I eat you'.\n"
     "• The 3 Types of 'No': 'Hindi' (facts/negation: Hindi ako pagod), 'Ayaw' (personal dislike/refusal: Ayaw ko niyan), 'Huwag' (commands/prohibition: Huwag kang tumakbo).\n"
     "• Untranslatable particles: na (already/now), pa (still/yet), naman (softener/turn-taking), pala (realization/surprise), daw/raw (hearsay/they said), ba (question marker).\n"
     "• Politeness: Po, opo, honorifics (ate, kuya).\n"
@@ -60,7 +68,8 @@ BASE = (
     "Format the translation as a Markdown Table (e.g. '| Original | Converted (Natural/Casual) | Converted (Formal/Respectful) | Context & Nuance |') so the UI renders it into clean boxed comparison cards. "
     "Always follow with a helpful tip and an encouraging practice prompt inviting the learner to try it in a sentence.\n\n"
     "PRESENTATION & UI FORMATTING RULES:\n"
-    "• Whenever explaining comparisons, differences, starter kits, vocabulary sets, or grammar rules, ALWAYS format them as Markdown Tables (e.g. '| Category | Example | What It Means |' or '| Level | English | Tagalog / Taglish |'). The UI renders these tables into beautiful boxed cards with clean borders and columns matching the visual design.\n"
+    "• Whenever explaining comparisons, differences, starter kits, vocabulary sets, or grammar rules, format them as clean Markdown Tables (e.g. '| Category | Example | What It Means |' or '| Level | English | Tagalog / Taglish |'). The UI renders these tables into beautiful boxed cards with clean borders and columns matching the visual design.\n"
+    "• TABLE INTEGRITY RULE: Every Markdown table MUST have matching column counts across all rows. Every row in <tbody> must have complete, filled cells for EVERY column. NEVER leave cells empty or omit columns.\n"
     "• Use '## ' for main section titles (e.g. '## 1️⃣ Tagalog Basics') and '### ' for practice prompts or sub-topics.\n"
     "• Use '---' horizontal rules to divide lesson parts cleanly.\n"
     "• Format tips, quizzes, and practice challenges at the end with '💡 Quick Tip:', '✨ Filipino Tip:', or '### Practice Prompt'.\n\n"
@@ -229,17 +238,13 @@ def _check_language_shift(text: str) -> str:
     low = text.lower().strip()
     clean_low = re.sub(r"[^\w\s-]", "", low).strip()
 
+    EN_VAR = r"(?:english|englisg|englsih|englihs|engish|englis)"
+    FIL_VAR = r"(?:tagalog|taglog|taglaog|filipino|pilipino)"
+
     # Exact short replies (e.g. answering "What language would you like to practice today?")
-    if clean_low in (
-        "tagalog", "filipino", "tagalog po", "filipino po", "tagalog please", "filipino please",
-        "tagalog lang", "filipino lang", "tagalog muna", "filipino muna", "tagalog na lang",
-        "tagalog tayo", "filipino tayo", "magtagalog", "mag-tagalog", "mag tagalog"
-    ):
+    if re.search(rf"^(?:{FIL_VAR})(?:\s+(?:po|please|lang|muna|na\s+lang|tayo))?$", clean_low) or clean_low in ("magtagalog", "mag-tagalog", "mag tagalog"):
         return "fil"
-    if clean_low in (
-        "english", "english po", "english please", "english lang", "english muna",
-        "english na lang", "english tayo", "magenglish", "mag-english", "mag english"
-    ):
+    if re.search(rf"^(?:{EN_VAR})(?:\s+(?:po|please|lang|muna|na\s+lang|tayo))?$", clean_low) or clean_low in ("magenglish", "mag-english", "mag english"):
         return "en"
     if clean_low in (
         "taglish", "both", "taglish po", "both po", "taglish please", "both please",
@@ -261,34 +266,34 @@ def _check_language_shift(text: str) -> str:
 
     # Tagalog/Filipino shift patterns
     tagalog_patterns = [
-        r"\b(?:learn|study|practice|teach|speak|talk|switch|change|shift|do)\s+(?:in\s+|to\s+|me\s+)?(?:tagalog|filipino)\b",
-        r"\b(?:tagalog|filipino)\s+(?:please|naman|tayo|mode|muna|lang|na\s+lang)\b",
-        r"\b(?:mag|mag-|mag\s+)(?:tagalog|filipino)\b",
-        r"\b(?:gusto\s+ko|gustong|gusto\s+kong)\s+(?:matuto|mag-aral|mag-practice|magpaturo|magsalita)\s+(?:ng\s+|mag-?)?(?:tagalog|filipino)\b",
-        r"\b(?:gusto\s+ko|gustong|gusto\s+kong)\s+mag-?(?:tagalog|filipino)\b",
-        r"\bturuan\s+mo\s+(?:ako|ko)\s+(?:ng\s+|mag-?)?(?:tagalog|filipino)\b",
-        r"\b(?:pwede\s+ba|can\s+we|let\s*s|lets)\s+(?:mag-?)?(?:tagalog|filipino)\b",
-        r"\b(?:i\s+want\s+to|i\s+wanna|id\s+like\s+to|want\s+to|wanna)\s+(?:practice|learn|study|speak|talk\s+in)\s+(?:in\s+)?(?:tagalog|filipino)\b",
-        r"\b(?:help\s+me\s+with|help\s+me\s+learn|help\s+me\s+speak)\s+(?:tagalog|filipino)\b",
-        r"\b(?:how\s+to\s+speak|teach\s+me\s+how\s+to\s+speak)\s+(?:tagalog|filipino)\b",
-        r"\bmag-?usap\s+tayo\s+sa\s+(?:tagalog|filipino)\b",
+        rf"\b(?:learn|study|practice|teach|speak|talk|switch|change|shift|do)\s+(?:in\s+|to\s+|me\s+)?{FIL_VAR}\b",
+        rf"\b{FIL_VAR}\s+(?:please|naman|tayo|mode|muna|lang|na\s+lang)\b",
+        rf"\b(?:mag|mag-|mag\s+){FIL_VAR}\b",
+        rf"\b(?:gusto\s+ko|gustong|gusto\s+kong)\s+(?:matuto|mag-aral|mag-practice|magpaturo|magsalita)\s+(?:ng\s+|mag-?)?{FIL_VAR}\b",
+        rf"\b(?:gusto\s+ko|gustong|gusto\s+kong)\s+mag-?{FIL_VAR}\b",
+        rf"\bturuan\s+mo\s+(?:ako|ko)\s+(?:ng\s+|mag-?)?{FIL_VAR}\b",
+        rf"\b(?:pwede\s+ba|can\s+we|let\s*s|lets)\s+(?:mag-?)?{FIL_VAR}\b",
+        rf"\b(?:i\s+want\s+to|i\s+wanna|id\s+like\s+to|want\s+to|wanna)\s+(?:practice|learn|study|speak|talk\s+in)\s+(?:in\s+)?{FIL_VAR}\b",
+        rf"\b(?:help\s+me\s+with|help\s+me\s+learn|help\s+me\s+speak)\s+{FIL_VAR}\b",
+        rf"\b(?:how\s+to\s+speak|teach\s+me\s+how\s+to\s+speak)\s+{FIL_VAR}\b",
+        rf"\bmag-?usap\s+tayo\s+sa\s+{FIL_VAR}\b",
     ]
     if any(re.search(p, low) for p in tagalog_patterns):
         return "fil"
 
     # English shift patterns
     english_patterns = [
-        r"\b(?:learn|study|practice|teach|speak|talk|switch|change|shift|do)\s+(?:in\s+|to\s+|me\s+)?english\b",
-        r"\benglish\s+(?:please|naman|tayo|mode|muna|lang|na\s+lang)\b",
-        r"\b(?:mag|mag-|mag\s+)english\b",
-        r"\b(?:gusto\s+ko|gustong|gusto\s+kong)\s+(?:matuto|mag-aral|mag-practice|magpaturo|magsalita)\s+(?:ng\s+|mag-?)?english\b",
-        r"\b(?:gusto\s+ko|gustong|gusto\s+kong)\s+mag-?english\b",
-        r"\bturuan\s+mo\s+(?:ako|ko)\s+(?:ng\s+|mag-?)?english\b",
-        r"\b(?:pwede\s+ba|can\s+we|let\s*s|lets)\s+(?:mag-?)?english\b",
-        r"\b(?:i\s+want\s+to|i\s+wanna|id\s+like\s+to|want\s+to|wanna)\s+(?:practice|learn|study|speak|talk\s+in)\s+(?:in\s+)?english\b",
-        r"\b(?:help\s+me\s+with|help\s+me\s+learn|help\s+me\s+speak)\s+english\b",
-        r"\b(?:how\s+to\s+speak|teach\s+me\s+how\s+to\s+speak)\s+english\b",
-        r"\bmag-?usap\s+tayo\s+sa\s+english\b",
+        rf"\b(?:learn|study|practice|teach|speak|talk|switch|change|shift|do)\s+(?:in\s+|to\s+|me\s+)?{EN_VAR}\b",
+        rf"\b{EN_VAR}\s+(?:please|naman|tayo|mode|muna|lang|na\s+lang)\b",
+        rf"\b(?:mag|mag-|mag\s+){EN_VAR}\b",
+        rf"\b(?:gusto\s+ko|gustong|gusto\s+kong)\s+(?:matuto|mag-aral|mag-practice|magpaturo|magsalita)\s+(?:ng\s+|mag-?)?{EN_VAR}\b",
+        rf"\b(?:gusto\s+ko|gustong|gusto\s+kong)\s+mag-?{EN_VAR}\b",
+        rf"\bturuan\s+mo\s+(?:ako|ko)\s+(?:ng\s+|mag-?)?{EN_VAR}\b",
+        rf"\b(?:pwede\s+ba|can\s+we|let\s*s|lets)\s+(?:mag-?)?{EN_VAR}\b",
+        rf"\b(?:i\s+want\s+to|i\s+wanna|id\s+like\s+to|want\s+to|wanna)\s+(?:practice|learn|study|speak|talk\s+in)\s+(?:in\s+)?{EN_VAR}\b",
+        rf"\b(?:help\s+me\s+with|help\s+me\s+learn|help\s+me\s+speak)\s+{EN_VAR}\b",
+        rf"\b(?:how\s+to\s+speak|teach\s+me\s+how\s+to\s+speak)\s+{EN_VAR}\b",
+        rf"\bmag-?usap\s+tayo\s+sa\s+{EN_VAR}\b",
     ]
     if any(re.search(p, low) for p in english_patterns):
         return "en"
@@ -874,17 +879,38 @@ def _build_local_reply(mode: str, history: list[dict]) -> str:
             f"💡 **Your Turn:** Try greeting me and saying what you want today (e.g. *\"Magandang araw po! Gusto ko ng kape.\"*)!"
         )
 
-    # 3c. English Basics
-    if any(p in msg for p in ("english basics", "basic english speaking", "basic english grammar", "help me practice basic english")):
+    # 3c. English Basics & Sentence Building (with typo tolerance)
+    if any(p in msg for p in (
+        "teach me english", "teach me englisg", "teach me englsih", "teach me englihs",
+        "teach me basic english", "turuan mo ako mag english", "turuan mo ako ng english",
+        "turuan mo ko mag english", "turuan mo ko mag-english", "matuto ng english",
+        "gusto kong matuto ng english", "gusto ko matuto ng english", "learn english",
+        "study english", "english basics", "basic english speaking", "basic english grammar",
+        "help me practice basic english", "how to speak english"
+    )):
         return _ret(
-            f"Awesome, let's practice **Basic English Speaking**{addr}! 🇬🇧\n\n"
-            f"| Core Rule | Formula | Example Sentence |\n"
-            f"|---|---|---|\n"
-            f"| Sentence Order | **Subject + Verb + Object** | *I am drinking water.* |\n"
-            f"| Past Tense | Completed action | *I ate lunch already.* |\n"
-            f"| Present Tense | Happening right now | *I am eating lunch right now.* |\n"
-            f"| Future Tense | Plan or intention | *I will eat lunch later.* |\n\n"
-            f"💡 **Practice Challenge:** Tell me one thing you did earlier today in a full English sentence!"
+            f"All right, let's learn **English Sentence Building and Basics**{addr}! 🇬🇧✨\n\n"
+            f"In English, the most essential rule is the **Subject-Verb-Object (SVO)** pattern: the person or thing doing the action comes **first**, followed by the action verb, then the object.\n\n"
+            f"| Language | Sentence Structure | Complete Sentence Example | Step-by-Step Breakdown |\n"
+            f"|---|---|---|---|\n"
+            f"| **English** | **Subject + Verb + Object** (SVO) | *I ate lunch.* | **I** (Subject) + **ate** (Verb) + **lunch** (Object) |\n"
+            f"| **Tagalog** | **Verb + Subject + Object** (VSO) | *Kumain ako ng tanghalian.* | **Kumain** (Verb) + **ako** (Subject) + **ng tanghalian** (Object) |\n\n"
+            f"---\n\n"
+            f"### 3 Core Building Blocks in English\n\n"
+            f"| Component | Role in Sentence | English Examples | Tagalog Meaning |\n"
+            f"|---|---|---|---|\n"
+            f"| **1️⃣ Subject (Who)** | Person/thing doing the action | *I, You, He, She, We, They* | *Ako, Ikaw, Siya, Kami/Tayo, Sila* |\n"
+            f"| **2️⃣ Verb (Action)** | The action being done | *eat, drink, study, work* | *kumain, uminom, mag-aral, magtrabaho* |\n"
+            f"| **3️⃣ Object (What)** | Receives the action | *rice, water, English, lesson* | *kanin, tubig, Ingles, aralin* |\n\n"
+            f"---\n\n"
+            f"### Simple Tense Guide (Past, Present, Future)\n\n"
+            f"| Tense | Time Frame | English Formula | Example Sentence (with Tagalog) |\n"
+            f"|---|---|---|---|\n"
+            f"| **Past** | Completed action | Subject + Past Verb | *I drank coffee earlier.* (*Uminom ako ng kape kanina.*) |\n"
+            f"| **Present** | Happening right now | Subject + am/is/are + -ing | *I am drinking coffee right now.* (*Umiinom ako ng kape ngayon.*) |\n"
+            f"| **Future** | Plan or intention | Subject + will + Verb | *I will drink coffee later.* (*Iinom ako ng kape mamaya.*) |\n\n"
+            f"💡 **Practice Challenge:** Subukan nating bumuo ng English sentence gamit ang **Subject + Verb + Object**!\n\n"
+            f"Paano mo sasabihin sa English: *\"Nag-aaral ako ng English ngayon\"*? Subukan mong i-reply!"
         )
 
     # 3d. The 3 Types of "No": Hindi vs. Ayaw vs. Huwag

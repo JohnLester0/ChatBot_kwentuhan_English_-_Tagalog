@@ -152,11 +152,14 @@ function formatMsg(text) {
     if (sepIdx === -1) return match;
 
     const parseRow = (line) => {
-      const stripped = line.replace(/^\s*\|\s*/, "").replace(/\s*\|\s*$/, "");
-      return stripped.split(/\s*\|\s*/);
+      let l = line.trim();
+      if (l.startsWith("|")) l = l.slice(1);
+      if (l.endsWith("|")) l = l.slice(0, -1);
+      return l.split("|").map(c => c.trim());
     };
 
     const headers = parseRow(lines[headerIdx]);
+    const colCount = Math.max(headers.length, 1);
     let html = '<div class="table-card"><table class="chat-table"><thead><tr>';
     headers.forEach(h => {
       html += `<th>${inline(h)}</th>`;
@@ -167,10 +170,15 @@ function formatMsg(text) {
       const row = lines[i];
       if (row.indexOf("|") === -1) continue;
       const cells = parseRow(row);
+      while (cells.length < colCount) {
+        cells.push("");
+      }
+      const finalCells = cells.slice(0, colCount);
       html += '<tr>';
-      cells.forEach((c, idx) => {
+      finalCells.forEach((c, idx) => {
         const cls = idx === 0 ? ' class="col-lead"' : '';
-        html += `<td${cls}>${inline(c)}</td>`;
+        const content = c.length > 0 ? inline(c) : '<span class="empty-dash">—</span>';
+        html += `<td${cls}>${content}</td>`;
       });
       html += '</tr>';
     }
