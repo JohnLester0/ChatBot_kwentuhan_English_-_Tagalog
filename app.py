@@ -913,6 +913,78 @@ def _build_local_reply(mode: str, history: list[dict]) -> str:
             f"Paano mo sasabihin sa English: *\"Nag-aaral ako ng English ngayon\"*? Subukan mong i-reply!"
         )
 
+    # 3c-2. Basic English Words & Vocabulary (e.g. "teach me some english word only basic", "basic english words", "vocabulary")
+    is_vocab_request = (
+        any(p in msg for p in ("word", "words", "salita", "vocab", "vocabulary")) and
+        any(p in msg for p in ("english", "englisg", "englsih", "basic", "basics", "teach", "give", "list", "learn", "study", "some", "only", "aralin", "turuan"))
+    ) or any(p in msg for p in (
+        "english word", "english words", "basic words", "basic word", "words only basic",
+        "word only basic", "some english word", "some english words", "teach me some english word",
+        "teach me some english words", "teach me english word", "teach me english words",
+        "give me english words", "list of english words", "common english words",
+        "everyday english words", "english vocabulary", "words in english", "word in english"
+    ))
+    if is_vocab_request:
+        return _ret(
+            f"Here is your **Basic English Words Starter Kit**{addr}! 🇬🇧✨\n\n"
+            f"Mastering these high-frequency everyday words will give you a solid foundation to start forming simple sentences immediately:\n\n"
+            f"### 1️⃣ Essential Action Words (Common Verbs)\n\n"
+            f"| English Verb | Tagalog Meaning | Example Sentence | Sentence Meaning |\n"
+            f"|---|---|---|---|\n"
+            f"| **Eat** | Kumain | *I eat rice.* | Kumakain ako ng kanin. |\n"
+            f"| **Drink** | Uminom | *Drink water.* | Uminom ka ng tubig. |\n"
+            f"| **Sleep** | Matulog | *I sleep early.* | Natutulog ako nang maaga. |\n"
+            f"| **Go** | Pumunta / Umalis | *Let's go home.* | Uwi na tayo. |\n"
+            f"| **Walk** | Maglakad | *We walk to school.* | Naglalakad kami papuntang paaralan. |\n"
+            f"| **Study** | Mag-aral | *I study English.* | Nag-aaral ako ng Ingles. |\n"
+            f"| **Work** | Magtrabaho | *He works today.* | Nagtatrabaho siya ngayon. |\n"
+            f"| **Buy** | Bumili | *I buy bread.* | Bumibili ako ng tinapay. |\n\n"
+            f"---\n\n"
+            f"### 2️⃣ Everyday Objects & Nouns\n\n"
+            f"| English Noun | Tagalog Meaning | Example Sentence | Sentence Meaning |\n"
+            f"|---|---|---|---|\n"
+            f"| **Water** | Tubig | *I need water.* | Kailangan ko ng tubig. |\n"
+            f"| **Food** | Pagkain | *The food is good.* | Masarap ang pagkain. |\n"
+            f"| **House / Home** | Bahay | *This is my house.* | Ito ang bahay ko. |\n"
+            f"| **Friend** | Kaibigan | *You are my friend.* | Kaibigan kita. |\n"
+            f"| **Money** | Pera | *I have some money.* | May kaunti akong pera. |\n"
+            f"| **Time** | Oras / Panahon | *What time is it?* | Anong oras na? |\n\n"
+            f"---\n\n"
+            f"### 3️⃣ Common Describing Words (Adjectives)\n\n"
+            f"| English Adjective | Tagalog Meaning | Example Sentence | Sentence Meaning |\n"
+            f"|---|---|---|---|\n"
+            f"| **Good / Fine** | Mabuti / Maayos | *I feel good today.* | Maayos ang pakiramdam ko ngayon. |\n"
+            f"| **Happy** | Masaya | *We are happy.* | Masaya kami. |\n"
+            f"| **Tired** | Pagod | *I am tired from work.* | Pagod ako sa trabaho. |\n"
+            f"| **Big / Small** | Malaki / Maliit | *Big house, small car.* | Malaking bahay, maliit na kotse. |\n"
+            f"| **Hot / Cold** | Mainit / Malamig | *Hot coffee, cold water.* | Mainit na kape, malamig na tubig. |\n\n"
+            f"💡 **Practice Challenge:** Pick any **2 words** from the tables above and try combining them into a simple sentence (for example: *\"I eat food\"* or *\"I drink cold water\"*)!\n\n"
+            f"Subukan mong i-type ang sentence mo rito, at tutulungan kita!"
+        )
+
+    # 3c-3. Basic Tagalog Words & Vocabulary
+    is_fil_vocab_request = (
+        any(p in msg for p in ("word", "words", "salita", "vocab", "vocabulary")) and
+        any(p in msg for p in ("tagalog", "filipino", "pilipino", "turuan mo ako ng salita", "mga salita"))
+    ) or any(p in msg for p in (
+        "tagalog word", "tagalog words", "filipino words", "basic tagalog words", "mga salitang tagalog"
+    ))
+    if is_fil_vocab_request:
+        return _ret(
+            f"Narito ang **Mga Pangunahing Salitang Tagalog (Basic Tagalog Words)**{po}{addr}! 🇵🇭✨\n\n"
+            f"| Salitang Tagalog | English Meaning | Halimbawa sa Pangungusap | English Translation |\n"
+            f"|---|---|---|---|\n"
+            f"| **Salamat** | Thank you | *Salamat sa tulong mo.* | Thank you for your help. |\n"
+            f"| **Kumusta** | How are you / Hello | *Kumusta ka na?* | How are you doing? |\n"
+            f"| **Oo / Hindi** | Yes / No | *Oo, gusto ko 'yan.* | Yes, I like that. |\n"
+            f"| **Masarap** | Delicious / Tasty | *Masarap ang ulam.* | The dish is delicious. |\n"
+            f"| **Maganda** | Beautiful / Pretty | *Magandang umaga.* | Beautiful morning (Good morning). |\n"
+            f"| **Tubig** | Water | *Pahingi po ng tubig.* | May I have some water please. |\n"
+            f"| **Bahay** | House / Home | *Nasa bahay ako.* | I am at home. |\n"
+            f"| **Bukas** | Tomorrow / Open | *Aalis kami bukas.* | We will leave tomorrow. |\n\n"
+            f"💡 **Your Turn:** Subukan mong gamitin ang isa sa mga salitang ito sa isang maikling pangungusap!"
+        )
+
     # 3d. The 3 Types of "No": Hindi vs. Ayaw vs. Huwag
     if any(p in msg for p in ("hindi vs", "ayaw vs", "huwag vs", "difference between hindi", "types of no")):
         return _ret(
@@ -1385,6 +1457,43 @@ def _build_local_reply(mode: str, history: list[dict]) -> str:
         if mode == "en":
             return _ret(f"That's a great question{addr}—you asked \"{raw}\"! Thinking about {reflected}, I'd say it comes down to what feels most helpful and enjoyable for you right now. What are your own thoughts on it so far?")
         return _ret(f"Uy, magandang tanong 'yang \"{raw}\"{po}{addr}! Kung iisipin natin yung tungkol sa {reflected}, depende rin talaga sa trip at goal mo ngayon.{haha} Ikaw, ano'ng leaning o naiisip mo tungkol diyan?")
+
+    # 11b. General Learning, Teaching, or Practice Requests (Prevent parroting fallback)
+    is_general_learn = any(w in msg for w in (
+        "teach me", "turuan mo", "help me learn", "i want to learn", "gusto kong matuto",
+        "gusto ko matuto", "give me", "show me", "can you teach", "pwede mo ba ako turuan",
+        "words", "word", "vocabulary", "lesson", "grammar"
+    ))
+    if is_general_learn:
+        if mode == "en" or any(w in msg for w in ("english", "englisg", "englsih")):
+            return _ret(
+                f"Sure thing{addr}! I would love to help you learn and practice English! 🇬🇧✨\n\n"
+                f"Here are great starting topics you can ask me to guide you through:\n"
+                f"• **Basic Words:** *\"Teach me some basic English words\"*\n"
+                f"• **Sentence Building (SVO):** *\"Teach me basic English grammar\"*\n"
+                f"• **Everyday Conversation:** *\"Teach me daily greetings and conversation\"*\n"
+                f"• **Ordering Food / Travel:** *\"Teach me dining and ordering phrases\"*\n\n"
+                f"Which one of these would you like to start with right now?"
+            )
+        elif mode == "fil" or any(w in msg for w in ("tagalog", "filipino")):
+            return _ret(
+                f"Walang problema{po}{addr}! Masaya kitang tutulungang mag-aral ng Tagalog! 🇵🇭✨\n\n"
+                f"Narito ang mga magagandang topics na puwede nating simulan:\n"
+                f"• **Mga Pangunahing Salita:** *\"Turuan mo ako ng basic Tagalog words\"*\n"
+                f"• **Pagbati at Pakikipag-usap:** *\"Tagalog basics and greetings\"*\n"
+                f"• **Pagsasabi ng Hindi:** *\"Difference between Hindi, Ayaw, and Huwag\"*\n"
+                f"• **Pang-araw-araw na Commute:** *\"Commuting phrases\"*\n\n"
+                f"Alin sa mga ito ang gusto mong unahin nating aralin?"
+            )
+        else:
+            return _ret(
+                f"Gusto ko 'yan{po}{addr}! Handa akong tulungan ka sa English, Tagalog, at Taglish practice! 🌟\n\n"
+                f"Puwede mo akong sabihan ng kahit anong gusto mong matutunan:\n"
+                f"• **\"Teach me basic English words\"** para sa mga pangunahing salita\n"
+                f"• **\"Teach me English sentence structure\"** para sa tamang ayos ng pangungusap\n"
+                f"• O mag-type ka lang ng kahit anong sentence na gusto mong i-translate o i-practice!\n\n"
+                f"Saan mo gustong magsimula today?"
+            )
 
     # 12. General statement reflection in the user's detected language (Tagalog, English, or Taglish)
     general_options = {
