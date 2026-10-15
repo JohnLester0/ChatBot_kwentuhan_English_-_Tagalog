@@ -1542,33 +1542,33 @@ class EditMessage(BaseModel):
     content: Optional[str] = ""
 
 # ---------- routes ----------
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def home():
     resp = FileResponse("index.html")
     resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     return resp
 
-@app.get("/admin")
-@app.get("/admin.html")
+@app.api_route("/admin", methods=["GET", "HEAD"])
+@app.api_route("/admin.html", methods=["GET", "HEAD"])
 def admin_page():
     resp = FileResponse("admin.html")
     resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     return resp
 
-@app.get("/style.css")
+@app.api_route("/style.css", methods=["GET", "HEAD"])
 def style_css():
     resp = FileResponse("style.css", media_type="text/css")
     resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     return resp
 
-@app.get("/admin.css")
+@app.api_route("/admin.css", methods=["GET", "HEAD"])
 def admin_css():
     resp = FileResponse("admin.css", media_type="text/css")
     resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     return resp
 
-@app.get("/health")
-@app.get("/healthz")
+@app.api_route("/health", methods=["GET", "HEAD"])
+@app.api_route("/healthz", methods=["GET", "HEAD"])
 def health():
     valid = has_valid_key()
     return {"ok": True, "provider": PROVIDER if valid else "local-demo", "model": MODEL, "logging": LOG_CHATS}
