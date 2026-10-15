@@ -52,6 +52,13 @@ BASE = (
     "Never make the learner feel embarrassed or discouraged. Point out the error kindly, provide the natural correction, and give a quick, simple explanation of why. "
     "Offer both formal options and casual, everyday Taglish alternatives so the learner understands when to use each "
     "(formatted warmly at the end of your response, e.g. using '💡 Quick Tip:' for English or '✨ Filipino Tip:' for Tagalog).\n\n"
+    "Third, immediately fulfill translation and conversion requests between English and Tagalog/Filipino. "
+    "Whenever the user asks to convert, translate, or say something in English or Tagalog (e.g. 'convert to English', 'convert to Tagalog', 'translate to English', 'translate to Tagalog', 'how do you say ... in English / Tagalog', 'paano sabihin sa English / Tagalog'): "
+    "Immediately provide the accurate, natural conversion. "
+    "When converting into English: Provide both natural casual English and formal/professional English. "
+    "When converting into Tagalog: Provide both formal standard Tagalog and natural everyday Taglish/conversational phrasing. "
+    "Format the translation as a Markdown Table (e.g. '| Original | Converted (Natural/Casual) | Converted (Formal/Respectful) | Context & Nuance |') so the UI renders it into clean boxed comparison cards. "
+    "Always follow with a helpful tip and an encouraging practice prompt inviting the learner to try it in a sentence.\n\n"
     "PRESENTATION & UI FORMATTING RULES:\n"
     "• Whenever explaining comparisons, differences, starter kits, vocabulary sets, or grammar rules, ALWAYS format them as Markdown Tables (e.g. '| Category | Example | What It Means |' or '| Level | English | Tagalog / Taglish |'). The UI renders these tables into beautiful boxed cards with clean borders and columns matching the visual design.\n"
     "• Use '## ' for main section titles (e.g. '## 1️⃣ Tagalog Basics') and '### ' for practice prompts or sub-topics.\n"
@@ -505,6 +512,178 @@ def _detect_tutor_tip(raw: str, mode: str) -> str:
 
     return ""
 
+CONVERT_TO_EN_DICT = {
+    "kumain ka na ba": ("Have you eaten yet?", "Did you eat already?", "Used as a warm, caring greeting in Filipino culture."),
+    "kumain na ako": ("I have eaten already.", "I already ate.", "Simple past / present perfect statement."),
+    "saan ka pupunta": ("Where are you going?", "Where are you headed?", "Common question when running into someone."),
+    "nasaan ang banyo": ("Where is the restroom / bathroom?", "Excuse me, where is the toilet?", "Essential travel and dining inquiry."),
+    "magandang umaga": ("Good morning!", "A very pleasant morning to you.", "Daily greeting from sunrise until noon."),
+    "magandang hapon": ("Good afternoon!", "Good day.", "Greeting from noon until sunset."),
+    "magandang gabi": ("Good evening!", "Good night.", "Greeting after sunset."),
+    "salamat": ("Thank you!", "Thank you very much.", "Universal expression of gratitude."),
+    "salamat po": ("Thank you, sir/ma'am.", "Thank you very much (respectful).", "Respectful form with 'po'."),
+    "walang anuman": ("You're welcome!", "Don't mention it / Not at all.", "Polite reply to 'salamat'."),
+    "ingat ka": ("Take care!", "Stay safe and take care.", "Warm farewell used with friends and family."),
+    "ingat po kayo": ("Take care (respectful / plural).", "Please take care.", "Respectful farewell with 'po'."),
+    "ingat ka palagi": ("Take care always!", "Always take care and stay safe.", "'Palagi' means 'always'."),
+    "gusto kong matulog": ("I want to sleep.", "I would like to get some rest.", "Expressing tiredness or need to sleep."),
+    "gusto kong magpahinga": ("I want to rest.", "I need to take a break / get some rest.", "Expressing need for rest."),
+    "pagod na ako": ("I'm tired / exhausted.", "I feel quite fatigued.", "Expressing physical or mental tiredness."),
+    "gutom na ako": ("I'm hungry / starving.", "I am feeling hungry.", "Expressing hunger before meals."),
+    "masarap ang ulam": ("The food / dish is delicious!", "The meal is wonderful.", "Praising a home-cooked dish or meal."),
+    "ano ang ginagawa mo": ("What are you doing?", "What are you up to right now?", "Casual check-in with friends."),
+    "ano'ng ginagawa mo": ("What are you doing?", "What are you working on?", "Casual contraction of 'ano ang'."),
+    "magkano ito": ("How much is this?", "What is the price of this item?", "Essential shopping phrase."),
+    "pahingi ng tubig": ("Can I have some water, please?", "May I please have a glass of water?", "Dining request."),
+    "hindi ko alam": ("I don't know.", "I am not certain about that.", "Honest response when unsure."),
+    "sandali lang": ("Just a moment / Hang on.", "Please wait for a moment.", "Asking for patience."),
+    "wait lang": ("Just a sec / Hang on.", "One moment please.", "Common Taglish expression."),
+    "tara na": ("Let's go!", "Shall we leave now?", "Urging someone to get moving."),
+    "bukas na lang": ("Maybe tomorrow / Let's do it tomorrow.", "We can postpone it until tomorrow.", "Polite way to reschedule."),
+    "mahal kita": ("I love you.", "I cherish you deeply.", "Romantic or deep affectionate statement."),
+    "miss na kita": ("I miss you.", "I long to see you again.", "Affectionate statement across distance."),
+    "pasensya na": ("I'm sorry / Apologies.", "Please excuse me / Forgive me.", "Humble apology."),
+    "patawad po": ("I sincerely apologize.", "Please forgive me.", "Formal / deep apology."),
+}
+
+CONVERT_TO_FIL_DICT = {
+    "have you eaten yet": ("Kumain ka na ba?", "Kumain ka na ba ng lunch/food?", "In Tagalog, 'na' means 'already' and 'ba' marks the question."),
+    "have you eaten": ("Kumain ka na ba?", "Kumain ka na ba?", "Verb-first structure: 'Kumain' (ate) + 'ka' (you) + 'na' (already) + 'ba' (?)."),
+    "did you eat already": ("Kumain ka na ba?", "Kumain ka na ba ng food?", "Tagalog uses the past aspect 'kumain' with 'na'."),
+    "where are you going": ("Saan ka pupunta?", "Saan ka pupunta? Saan punta mo?", "'Saan' is used for destination; 'pupunta' is future tense of go."),
+    "where is the bathroom": ("Nasaan ang banyo?", "Saan 'yung comfort room / CR?", "In the Philippines, people colloquially say 'CR' (comfort room)."),
+    "where is the restroom": ("Nasaan ang banyo?", "Nasaan po ang CR?", "Add 'po' for polite inquiry to staff."),
+    "where is the station": ("Nasaan ang istasyon?", "Saan 'yung station?", "Can use 'istasyon' or colloquial 'station'."),
+    "good morning": ("Magandang umaga po!", "Good morning sa inyo!", "Prefix 'Ma-' forms adjectives: 'ganda' (beauty) -> 'maganda' (beautiful)."),
+    "good afternoon": ("Magandang hapon po!", "Magandang hapon!", "Used from 12:00 PM until around 6:00 PM."),
+    "good evening": ("Magandang gabi po!", "Magandang gabi!", "Greeting after 6:00 PM."),
+    "thank you": ("Salamat po!", "Thanks / Salamat!", "Add 'po' to show warmth and respect to elders or strangers."),
+    "thank you very much": ("Maraming salamat po!", "Thank you nang marami!", "'Marami' means 'many/much'."),
+    "you're welcome": ("Walang anuman po!", "Walang anuman / No problem!", "Literally means 'it's nothing' ('wala' = none, 'anuman' = whatever)."),
+    "you are welcome": ("Walang anuman po!", "No problem / Walang anuman!", "Standard polite reply."),
+    "take care": ("Ingat ka po!", "Ingat palagi!", "Short for 'Mag-ingat ka' (take care of yourself)."),
+    "take care always": ("Ingat ka palagi po!", "Ingat always!", "'Palagi' means 'always'."),
+    "i want to sleep": ("Gusto kong matulog.", "Gusto ko na mag-sleep / magpahinga.", "'Gusto' (want) + linker '-ng' + verb 'matulog' (to sleep)."),
+    "i need some rest": ("Kailangan kong magpahinga.", "Need ko mag-rest muna.", "'Kailangan' (need) + linker '-ng' + 'magpahinga' (to rest)."),
+    "i'm tired": ("Pagod na ako.", "Medyo tired na ako.", "'Pagod' (tired) + 'na' (already) + 'ako' (I)."),
+    "i am tired": ("Pagod na ako.", "Tired na ako today.", "Expressing physical or mental tiredness."),
+    "i'm hungry": ("Gutom na ako.", "Gutom na ako, kain na tayo.", "'Gutom' (hungry) + 'na' (already) + 'ako' (I)."),
+    "i am hungry": ("Nagugutom ako.", "Hungry na me / Gutom na ako.", "Present progressive: 'Nagugutom' (getting hungry)."),
+    "i love you": ("Mahal kita.", "Love kita / I love you.", "'Mahal' (love) + 'kita' (dual pronoun meaning 'I... you')."),
+    "i miss you": ("Miss na kita.", "Nangungulila ako sa'yo.", "'Miss na kita' is the most natural modern expression in the Philippines."),
+    "how much is this": ("Magkano po ito?", "Magkano 'to?", "Use 'Magkano' when asking about prices/costs."),
+    "what are you doing": ("Ano'ng ginagawa mo?", "Ano ginagawa mo ngayon?", "'Ano'ng' is contraction of 'Ano ang'."),
+    "can i have some water": ("Pahingi po ng tubig.", "Pa-order po ng water.", "'Pahingi' is polite request asking to receive something."),
+    "i don't know": ("Hindi ko alam.", "Hindi ko sure / 'di ko alam.", "'Hindi' (negation of fact) + 'ko' (by me) + 'alam' (known)."),
+    "just a moment": ("Sandali lang po.", "Wait lang / Sandali lang.", "'Sandali' means 'moment / brief time'."),
+    "let's go": ("Tara na!", "Tara, let's go!", "'Tara' is the friendly invitation to get moving together."),
+    "i'm sorry": ("Pasensya na po.", "Sorry talaga / Pasensya na.", "Derived from Spanish 'paciencia' (patience)."),
+}
+
+def _extract_conversion_phrase(raw: str) -> str:
+    m_quote = re.search(r"[\x27\"\u201c\u2018](.+?)[\x27\"\u201d\u2019]", raw)
+    if m_quote and len(m_quote.group(1).strip()) > 1:
+        return m_quote.group(1).strip(" \x27\"?:;!.,\n\t")
+    m_colon = re.search(r"[:\-\—]\s*(.+)$", raw)
+    if m_colon and len(m_colon.group(1).strip()) > 1:
+        return m_colon.group(1).strip(" \x27\"?:;!.,\n\t")
+    s = raw.strip()
+    s = re.sub(r"^(?:can\s+you\s+)?(?:please\s+)?(?:convert|translate)\s+(?:this\s+)?(?:sentence\s+|phrase\s+|word\s+)?(?:to|into|in)\s+(?:english|tagalog|filipino)\s*[:\-\—]?\s*", "", s, flags=re.I)
+    s = re.sub(r"^how\s+(?:do\s+you|to)\s+say\s+(.+?)\s+in\s+(?:english|tagalog|filipino).*$", r"\1", s, flags=re.I)
+    s = re.sub(r"^what\s+is\s+(.+?)\s+in\s+(?:english|tagalog|filipino).*$", r"\1", s, flags=re.I)
+    s = re.sub(r"^paano\s+(?:sabihin|i-?english|i-?tagalog)\s+(?:sa\s+(?:english|tagalog|filipino)\s+)?(?:ang\s+|yung\s+)?", "", s, flags=re.I)
+    s = re.sub(r"^ano\s+sa\s+(?:english|tagalog|filipino)\s+(?:ang\s+|yung\s+)?", "", s, flags=re.I)
+    s = re.sub(r"\s+in\s+(?:english|tagalog|filipino).*$", "", s, flags=re.I)
+    s = re.sub(r"\s+sa\s+(?:english|tagalog|filipino).*$", "", s, flags=re.I)
+    return s.strip(" \x27\"?:;!.,\n\t")
+
+def _handle_conversion_request(raw: str, mode: str) -> str | None:
+    low = raw.lower().strip()
+    is_to_en = bool(re.search(
+        r"(?:\b(?:convert|translate)\b.*?\b(?:to|into|in)\s+english\b|"
+        r"\bhow\s+(?:do\s+you|to)\s+say\b.*?\bin\s+english\b|"
+        r"\bpaano\s+(?:sabihin|i-?english)\b.*?\b(?:sa\s+english|sa\s+ingles)\b|"
+        r"\bano\s+sa\s+english\b|"
+        r"\bwhat\s+is\b.*?\bin\s+english\b|"
+        r"\bin\s+english\s*[:\-\—])",
+        low
+    ))
+    is_to_fil = bool(re.search(
+        r"(?:\b(?:convert|translate)\b.*?\b(?:to|into|in)\s+(?:tagalog|filipino)\b|"
+        r"\bhow\s+(?:do\s+you|to)\s+say\b.*?\bin\s+(?:tagalog|filipino)\b|"
+        r"\bpaano\s+(?:sabihin|i-?tagalog)\b.*?\b(?:sa\s+tagalog|sa\s+filipino)\b|"
+        r"\bano\s+sa\s+(?:tagalog|filipino)\b|"
+        r"\bwhat\s+is\b.*?\bin\s+(?:tagalog|filipino)\b|"
+        r"\bin\s+(?:tagalog|filipino)\s*[:\-\—])",
+        low
+    ))
+
+    if not is_to_en and not is_to_fil:
+        return None
+
+    phrase = _extract_conversion_phrase(raw)
+    if not phrase:
+        phrase = raw
+    norm = re.sub(r"[^\w\s]", "", phrase.lower()).strip()
+
+    if is_to_en:
+        match = CONVERT_TO_EN_DICT.get(norm)
+        if not match:
+            for k, v in CONVERT_TO_EN_DICT.items():
+                if k in norm or norm in k:
+                    match = v
+                    break
+        if match:
+            casual, formal, tip = match
+            return (
+                f"Here is the conversion into **English** for: *\"{phrase}\"*! 🌟\n\n"
+                f"| Tagalog / Taglish | Natural Casual English | Formal / Business English | Context & Nuance |\n"
+                f"|---|---|---|---|\n"
+                f"| *{phrase}* | **{casual}** | **{formal}** | {tip} |\n\n"
+                f"💡 **Quick Tip:** In English conversation, the Subject usually comes before the Verb (SVO: *I ate lunch*), whereas Tagalog often puts the verb first (*Kumain ako*).\n\n"
+                f"### Practice Prompt\n"
+                f"Try replying in English! How would you use this phrase in a sentence?"
+            )
+        else:
+            return (
+                f"Here is how to convert *\"{phrase}\"* into **English**! 🌟\n\n"
+                f"| Original (Tagalog) | English Sentence Structure | Guidance & Nuance |\n"
+                f"|---|---|---|\n"
+                f"| *{phrase}* | **Subject + Verb + Object** | English sentences place the subject first (e.g. *I, You, We*), followed by the verb and details. |\n\n"
+                f"💡 **Quick Tip:** To convert natural Tagalog thoughts into English, identify the **who** (Subject) first, then the **action** (Verb).\n\n"
+                f"### Practice Prompt\n"
+                f"Tell me more context about what you want to express in English, and I will coach you on the exact phrasing!"
+            )
+
+    if is_to_fil:
+        match = CONVERT_TO_FIL_DICT.get(norm)
+        if not match:
+            for k, v in CONVERT_TO_FIL_DICT.items():
+                if k in norm or norm in k:
+                    match = v
+                    break
+        if match:
+            formal, casual, tip = match
+            return (
+                f"Here is the conversion into **Tagalog (Filipino)** for: *\"{phrase}\"*! 🌟\n\n"
+                f"| English Original | Standard Tagalog | Casual / Everyday Taglish | Cultural Tip |\n"
+                f"|---|---|---|---|\n"
+                f"| *{phrase}* | **{formal}** | **{casual}** | {tip} |\n\n"
+                f"✨ **Filipino Tip:** Add **po** or **opo** to show respect when speaking to elders, customer service, or people you don't know well.\n\n"
+                f"### Practice Prompt\n"
+                f"Subukan mong sabihin 'yan sa Tagalog o Taglish! Paano mo gagamitin 'yan sa isang conversation?"
+            )
+        else:
+            return (
+                f"Here is how to convert *\"{phrase}\"* into **Tagalog (Filipino)**! 🌟\n\n"
+                f"| Original (English) | Tagalog Sentence Structure | Guidance & Nuance |\n"
+                f"|---|---|---|\n"
+                f"| *{phrase}* | **Verb + Subject + Object** | Tagalog conversation typically puts the action verb first (e.g. *Kumain ako*, *Pumunta kami*). |\n\n"
+                f"✨ **Filipino Tip:** Most Tagalog verbs use affixes like **mag-** (action initiated by subject), **-um-** (internal action), or **na-** (past state/completed action).\n\n"
+                f"### Practice Prompt\n"
+                f"Subukan nating buuin ang Tagalog sentence mo! Sino ang gumagawa ng action at kailan nangyari?"
+            )
+
 def _build_local_reply(mode: str, history: list[dict]) -> str:
     raw = history[-1]["content"].strip()
     shift = _check_language_shift(raw)
@@ -515,6 +694,10 @@ def _build_local_reply(mode: str, history: list[dict]) -> str:
     msg = raw.lower()
     if _is_unsupported_language(raw):
         return _unsupported_language_reply(mode)
+    
+    conv_reply = _handle_conversion_request(raw, mode)
+    if conv_reply:
+        return conv_reply
     style = _extract_style(raw, history)
     po = " po" if style["polite"] and mode != "en" else ""
     addr = f" {style['slang']}" if style['slang'] else (f" {style['name']}" if style['name'] else "")
