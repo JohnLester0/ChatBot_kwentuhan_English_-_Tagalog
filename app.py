@@ -3,7 +3,7 @@ import os, json, time, csv, io, sqlite3, secrets, collections, asyncio, random
 from typing import Literal, Any, Optional
 import httpx
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, StreamingResponse, PlainTextResponse
+from fastapi.responses import FileResponse, StreamingResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from anthropic import AsyncAnthropic
@@ -1566,6 +1566,18 @@ def admin_css():
     resp = FileResponse("admin.css", media_type="text/css")
     resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     return resp
+
+@app.api_route("/favicon.ico", methods=["GET", "HEAD"])
+def favicon_ico():
+    if os.path.exists("favicon.ico"):
+        return FileResponse("favicon.ico", media_type="image/x-icon")
+    return Response(status_code=204)
+
+@app.api_route("/favicon.svg", methods=["GET", "HEAD"])
+def favicon_svg():
+    if os.path.exists("favicon.svg"):
+        return FileResponse("favicon.svg", media_type="image/svg+xml")
+    return Response(status_code=204)
 
 @app.api_route("/health", methods=["GET", "HEAD"])
 @app.api_route("/healthz", methods=["GET", "HEAD"])
